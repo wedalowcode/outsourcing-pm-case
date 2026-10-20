@@ -2,9 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   createDeptAction,
+  deleteDeptAction,
   updateDeptAction,
 } from "@/server/dept/actions";
 import { getExcludedDeptIds } from "@/server/dept/tree";
@@ -48,6 +59,11 @@ export function DeptWorkspace({
   const [dialogState, setDialogState] = useState<DialogState>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  // 删除确认窗口的状态
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   function openCreateDialog() {
     setSubmitError("");
@@ -112,6 +128,31 @@ export function DeptWorkspace({
     }
   }
 
+  async function handleDelete() {
+    if (!deleteTarget || deleting) return;
+
+    setDeleting(true);
+    setDeleteError("");
+
+    try {
+      const result = await deleteDeptAction(deleteTarget.id);
+
+      if (!result.ok) {
+        setDeleteError(result.message);
+        return;
+      }
+
+      // 删除成功，关闭确认窗口并刷新列表
+      setDeleteTarget(null);
+      router.refresh();
+    } catch (error) {
+      console.error("删除部门失败", error);
+      setDeleteError("删除失败，请稍后重试");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   /**
    * 统一的跳转入口：当前条件 + 本次改动 → 新的查询串
    * - keyword / parent：不传表示保持不变；keyword 传 ""、parent 传 null 表示清除
@@ -168,6 +209,10 @@ export function DeptWorkspace({
           rows={pageData.rows}
           filteredByParent={selectedId !== null}
           onEdit={openEditDialog}
+          onDelete={(row) => {
+            setDeleteError("");
+            setDeleteTarget(row);
+          }}
         />
         <Pagination
           page={pageData.page}
@@ -201,6 +246,57 @@ export function DeptWorkspace({
           }}
           onSubmit={handleSubmit}
         />
+      )}
+
+      {/*
+        deleteTarget 为 null 时整体卸载，而不是把 open 置为 false。
+
+        Base UI 的弹窗在关闭时要等退出动画结束才卸载。删除成功后会立刻调用
+        router.refresh()，这次重渲染会打断退出动画，导致弹窗卡在"已关闭但没卸载"
+        的状态（data-closed 已加，元素却还留在页面上，Escape 和取消都失效）。
+        交给 React 直接卸载可以绕开对动画生命周期的依赖。
+      */}
+      {deleteTarget && (
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open && !deleting) {
+              setDeleteTarget(null);
+              setDeleteError("");
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>确认删除部门？</AlertDialogTitle>
+
+              <AlertDialogDescription>
+                确定要删除部门“{deleteTarget.name}”吗？
+                此操作将提交到服务端执行，请确认后再继续。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            {deleteError ? (
+              <p className="text-sm text-destructive">{deleteError}</p>
+            ) : null}
+
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>
+                取消
+              </AlertDialogCancel>
+
+              <AlertDialogAction
+                disabled={deleting}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleDelete();
+                }}
+              >
+                {deleting ? "删除中…" : "确认删除"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );
