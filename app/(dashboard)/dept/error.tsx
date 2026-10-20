@@ -8,7 +8,7 @@ export default function DeptError({
   retry: () => void;
 }) {
   return (
-    <main className="p-6">
+    <>
       <h1 className="text-xl font-semibold text-gray-800">
         部门数据加载失败
       </h1>
@@ -22,6 +22,6 @@ export default function DeptError({
       >
         重试
       </button>
-    </main>
+    </>
   );
 }

@@ -32,7 +32,7 @@ export default async function DeptPage({
   const nameById = new Map(allRows.map((row) => [row.id, row.name]));
 
   return (
-    <main className="p-6">
+    <>
       <h1 className="mb-4 text-xl font-semibold text-gray-800">部门管理</h1>
 
       <DeptWorkspace
@@ -46,6 +46,6 @@ export default async function DeptPage({
         keyword={params.keyword ?? ""}
         selectedId={params.parent ?? null}
       />
-    </main>
+    </>
   );
 }
