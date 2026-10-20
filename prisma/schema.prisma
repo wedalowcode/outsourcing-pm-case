@@ -17,9 +17,18 @@ model Dept {
   name        String
   code        String   @unique
   parentId    String?
-  sort        Int      @default(0)
+  parent      Dept?    @relation("DeptTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children    Dept[]   @relation("DeptTree")
+
+  sort        Int      @default(10)
   status      Int      @default(1)
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// 记录各范围已经分配的最大部门序号
+model DeptCodeCounter {
+  scope String @id
+  value Int    @default(0)
 }
