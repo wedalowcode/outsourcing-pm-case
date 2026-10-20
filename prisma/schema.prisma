@@ -13,12 +13,12 @@ datasource db {
 }
 
 model Dept {
-  id          String   @id @default(cuid())
-  name        String
-  code        String   @unique
-  parentId    String?
-  parent      Dept?    @relation("DeptTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children    Dept[]   @relation("DeptTree")
+  id       String  @id @default(cuid())
+  name     String
+  code     String  @unique
+  parentId String?
+  parent   Dept?   @relation("DeptTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children Dept[]  @relation("DeptTree")
 
   sort        Int      @default(10)
   status      Int      @default(1)
@@ -31,4 +31,77 @@ model Dept {
 model DeptCodeCounter {
   scope String @id
   value Int    @default(0)
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  username     String     @unique @db.VarChar(50)
+  passwordHash String     @db.VarChar(255)
+  name         String     @db.VarChar(100)
+  email        String?    @db.VarChar(255)
+  phone        String?    @db.VarChar(30)
+  status       UserStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userRoles UserRole[]
+
+  @@index([status])
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  code        String  @unique @db.VarChar(50)
+  name        String  @db.VarChar(100)
+  description String? @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  code        String  @unique @db.VarChar(100)
+  name        String  @db.VarChar(100)
+  description String? @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
 }
