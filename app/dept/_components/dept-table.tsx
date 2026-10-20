@@ -4,10 +4,12 @@ export function DeptTable({
   rows,
   filteredByParent,
   onEdit,
+  onDelete,
 }: {
   rows: Row[];
   filteredByParent: boolean; // 是否选中了某个上级部门，用来区分两种空状态
   onEdit: (row: Row) => void;
+  onDelete: (row: Row) => void;
 }) {
   return (
     <table className="w-full border-collapse text-sm">
@@ -41,13 +43,23 @@ export function DeptTable({
                   {enabled ? "启用" : "停用"}
                 </td>
                 <td className="py-2">
-                  <button
-                    type="button"
-                    className="text-blue-600 hover:underline"
-                    onClick={() => onEdit(row)}
-                  >
-                    编辑
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="text-blue-600 hover:underline"
+                      onClick={() => onEdit(row)}
+                    >
+                      编辑
+                    </button>
+
+                    <button
+                      type="button"
+                      className="text-destructive hover:underline"
+                      onClick={() => onDelete(row)}
+                    >
+                      删除
+                    </button>
+                  </div>
                 </td>
               </tr>
             );
