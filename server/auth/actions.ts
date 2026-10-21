@@ -2,6 +2,10 @@
 
 import { loginSchema } from "@/server/auth/schema";
 import { verifyCredentials } from "@/server/auth/verify-credentials";
+import {
+  createSession,
+  deleteCurrentSession,
+} from "@/server/auth/session";
 
 export type LoginActionResult =
   | {
@@ -34,15 +38,25 @@ export async function loginAction(
       };
     }
 
+    await createSession(result.user.id);
+
     return {
       ok: true,
     };
   } catch (error) {
-    console.error("登录凭据验证失败", error);
+    console.error("登录处理失败", error);
 
     return {
       ok: false,
-      message: "服务暂时不可用，请稍后重试",
+      message: "登录失败，请稍后重试",
     };
   }
+}
+
+export async function logoutAction() {
+  await deleteCurrentSession();
+
+  return {
+    ok: true as const,
+  };
 }

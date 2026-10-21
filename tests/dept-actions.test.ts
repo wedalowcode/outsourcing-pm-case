@@ -8,12 +8,17 @@ import {
 
 import { BizError } from "@/lib/biz-error";
 
+// actions 链路里包含 `import "server-only"`（经由 session.ts 引入），
+// 在 Node 测试环境直接加载会抛错。这里把它换成空模块。
+vi.mock("server-only", () => ({}));
+
 // 使用 vi.hoisted 创建 Mock 函数，确保它们可以被 vi.mock 使用。
 const mocks = vi.hoisted(() => ({
   createDept: vi.fn(),
   updateDept: vi.fn(),
   deleteDept: vi.fn(),
   revalidatePath: vi.fn(),
+  getCurrentSession: vi.fn(),
 }));
 
 // 模拟 Service 层，不连接真实数据库。
@@ -26,6 +31,11 @@ vi.mock("@/server/dept/service", () => ({
 // 模拟 Next.js 的缓存重新验证函数。
 vi.mock("next/cache", () => ({
   revalidatePath: mocks.revalidatePath,
+}));
+
+// 模拟会话服务，避免读取真实 Cookie 和数据库。
+vi.mock("@/server/auth/session", () => ({
+  getCurrentSession: mocks.getCurrentSession,
 }));
 
 // 引入待测试的 Action。
@@ -44,6 +54,18 @@ describe("部门管理 Server Actions", () => {
     mocks.createDept.mockResolvedValue({});
     mocks.updateDept.mockResolvedValue({});
     mocks.deleteDept.mockResolvedValue(undefined);
+
+    // 默认视为已登录。
+    mocks.getCurrentSession.mockResolvedValue({
+      sessionId: "session-1",
+      user: {
+        id: "user-1",
+        username: "admin",
+        name: "系统管理员",
+        status: "ACTIVE",
+      },
+      expiresAt: new Date(Date.now() + 60_000),
+    });
   });
 
   describe("createDeptAction", () => {

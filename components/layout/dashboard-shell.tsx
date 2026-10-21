@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, type ReactNode } from "react";
+
+import { logoutAction } from "@/server/auth/actions";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   {
@@ -21,6 +24,32 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+
+  async function handleLogout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+    setLogoutError("");
+
+    try {
+      const result = await logoutAction();
+
+      if (!result.ok) {
+        setLogoutError("退出登录失败，请重试");
+        return;
+      }
+
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      setLogoutError("退出登录失败，请稍后重试");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
@@ -67,8 +96,25 @@ export function DashboardShell({
             项目管理系统
           </div>
 
-          <div className="text-sm text-slate-600">
-            管理员
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-600">
+              管理员
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={loggingOut}
+              onClick={handleLogout}
+            >
+              {loggingOut ? "退出中..." : "退出登录"}
+            </Button>
+
+            {logoutError && (
+              <span className="text-sm text-destructive" role="alert">
+                {logoutError}
+              </span>
+            )}
           </div>
         </header>
 
