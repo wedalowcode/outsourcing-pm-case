@@ -2,12 +2,8 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 
-import {
-  loginSchema,
-  type LoginFormValues,
-} from "@/lib/validations/auth";
+import { loginAction } from "@/server/auth/actions";
 
 import {
   Card,
@@ -21,6 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
+type LoginFormValues = {
+  username: string;
+  password: string;
+};
+
 export default function LoginPage() {
   const [submitError, setSubmitError] = useState("");
 
@@ -29,7 +30,6 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
       password: "",
@@ -40,15 +40,20 @@ export default function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     setSubmitError("");
 
-    // 本节只验证表单数据。
-    // 下一节再接入真正的登录认证接口。
-    console.log("表单校验通过", {
-      username: values.username,
-    });
+    try {
+      const result = await loginAction(values);
 
-    setSubmitError(
-      "表单校验已通过，登录认证接口将在下一节接入。",
-    );
+      if (!result.ok) {
+        setSubmitError(result.message);
+        return;
+      }
+
+      setSubmitError(
+        "凭据验证成功，会话管理将在下一节接入。",
+      );
+    } catch {
+      setSubmitError("提交失败，请稍后重试");
+    }
   }
 
   return (
@@ -85,7 +90,18 @@ export default function LoginPage() {
                     ? "username-error"
                     : undefined
                 }
-                {...register("username")}
+                {...register("username", {
+                  required: "请输入用户名",
+                  maxLength: {
+                    value: 50,
+                    message: "用户名不能超过 50 个字符",
+                  },
+                  pattern: {
+                    value: /^[a-zA-Z0-9._-]+$/,
+                    message:
+                      "用户名只能包含字母、数字、点、下划线和连字符",
+                  },
+                })}
               />
 
               {errors.username && (
@@ -115,7 +131,14 @@ export default function LoginPage() {
                     ? "password-error"
                     : undefined
                 }
-                {...register("password")}
+                {...register("password", {
+                  required: "请输入密码",
+                  maxLength: {
+                    value: 1024,
+                    message:
+                      "密码长度不能超过 1024 个字符",
+                  },
+                })}
               />
 
               {errors.password && (
@@ -143,7 +166,7 @@ export default function LoginPage() {
               className="w-full"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "正在提交..." : "登录"}
+              {isSubmitting ? "验证中..." : "登录"}
             </Button>
           </form>
         </CardContent>
