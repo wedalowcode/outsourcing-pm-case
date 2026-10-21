@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 import { loginAction } from "@/server/auth/actions";
 
@@ -23,6 +24,7 @@ type LoginFormValues = {
 };
 
 export default function LoginPage() {
+  const router = useRouter();
   const [submitError, setSubmitError] = useState("");
 
   const {
@@ -48,11 +50,10 @@ export default function LoginPage() {
         return;
       }
 
-      setSubmitError(
-        "凭据验证成功，会话管理将在下一节接入。",
-      );
+      router.replace("/dept");
+      router.refresh();
     } catch {
-      setSubmitError("提交失败，请稍后重试");
+      setSubmitError("登录失败，请稍后重试");
     }
   }
 

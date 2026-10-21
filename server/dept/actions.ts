@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { BizError } from "@/lib/biz-error";
+import { getCurrentSession } from "@/server/auth/session";
 import * as deptService from "./service";
 import { DeptInputSchema } from "./schema";
 
@@ -62,7 +63,14 @@ function validateDeptInput(input: unknown) {
 
 /** 新增部门 */
 export async function createDeptAction(input: unknown) {
-  // TODO：先校验登录态和新增权限
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return {
+      ok: false as const,
+      message: "登录状态已失效，请重新登录",
+    };
+  }
 
   const validation = validateDeptInput(input);
 
@@ -81,7 +89,14 @@ export async function updateDeptAction(
   id: string,
   input: unknown,
 ) {
-  // TODO：先校验登录态和编辑权限
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return {
+      ok: false as const,
+      message: "登录状态已失效，请重新登录",
+    };
+  }
 
   if (typeof id !== "string" || id.trim() === "") {
     return {
@@ -104,7 +119,14 @@ export async function updateDeptAction(
 
 /** 删除部门 */
 export async function deleteDeptAction(id: unknown) {
-  // TODO：先校验登录态和删除权限
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return {
+      ok: false as const,
+      message: "登录状态已失效，请重新登录",
+    };
+  }
 
   if (typeof id !== "string" || id.trim() === "") {
     return {
