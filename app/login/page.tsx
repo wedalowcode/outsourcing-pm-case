@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 
@@ -26,6 +26,14 @@ type LoginFormValues = {
 export default function LoginPage() {
   const router = useRouter();
   const [submitError, setSubmitError] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  // 只有客户端水合完成后，才允许提交表单。
+  // 否则用户在页面尚未就绪时提交，浏览器会按原生表单行为把
+  // username / password 拼进 URL（GET /login?username=...&password=...）。
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const {
     register,
@@ -74,6 +82,7 @@ export default function LoginPage() {
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5"
+            method="post"
             noValidate
           >
             <div className="space-y-2">
@@ -165,7 +174,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting}
+              disabled={!hydrated || isSubmitting}
             >
               {isSubmitting ? "验证中..." : "登录"}
             </Button>
