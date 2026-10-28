@@ -16,6 +16,10 @@ const navigation = [
     title: "部门管理",
     href: "/dept",
   },
+  {
+    title: "用户管理",
+    href: "/users",
+  },
 ];
 
 type DashboardUser = {

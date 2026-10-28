@@ -31,8 +31,8 @@ import {
   type DeptForm,
 } from "./_components/dept-edit-dialog";
 import { DeptTable } from "./_components/dept-table";
-import { Pagination } from "./_components/pagination";
-import { SearchBar } from "./_components/search-bar";
+import { Pagination } from "@/components/common/pagination";
+import { SearchBar } from "@/components/common/search-bar";
 import { TreeNodeItem } from "./_components/tree-node-item";
 
 /** 弹窗的三种状态：关闭 / 新增 / 编辑 */
@@ -201,6 +201,7 @@ export function DeptWorkspace({
           <SearchBar
             key={keyword}
             defaultValue={keyword}
+            placeholder="搜索部门名称 / 编码"
             onSearch={(kw) => go({ keyword: kw })}
           />
           <Button onClick={openCreateDialog}>新增部门</Button>
