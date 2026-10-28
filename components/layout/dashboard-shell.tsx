@@ -18,11 +18,22 @@ const navigation = [
   },
 ];
 
+type DashboardUser = {
+  id: string;
+  username: string;
+  name: string;
+  status: "ACTIVE" | "DISABLED";
+};
+
+type DashboardShellProps = {
+  children: ReactNode;
+  user: DashboardUser;
+};
+
 export function DashboardShell({
   children,
-}: {
-  children: ReactNode;
-}) {
+  user,
+}: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -98,7 +109,7 @@ export function DashboardShell({
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-600">
-              管理员
+              {user.name}
             </span>
 
             <Button
