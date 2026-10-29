@@ -38,6 +38,11 @@ enum UserStatus {
   DISABLED
 }
 
+enum RoleStatus {
+  ACTIVE
+  DISABLED
+}
+
 model User {
   id           String     @id @default(cuid())
   username     String     @unique @db.VarChar(50)
@@ -57,28 +62,36 @@ model User {
 }
 
 model Role {
-  id          String  @id @default(cuid())
-  code        String  @unique @db.VarChar(50)
-  name        String  @db.VarChar(100)
-  description String? @db.VarChar(500)
+  id          String     @id @default(cuid())
+  code        String     @unique @db.VarChar(50)
+  name        String     @db.VarChar(100)
+  description String?    @db.VarChar(500)
+  status      RoleStatus @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   userRoles       UserRole[]
   rolePermissions RolePermission[]
+
+  @@index([status])
 }
 
 model Permission {
   id          String  @id @default(cuid())
   code        String  @unique @db.VarChar(100)
   name        String  @db.VarChar(100)
+  resource    String  @db.VarChar(50)
+  action      String  @db.VarChar(50)
   description String? @db.VarChar(500)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@index([resource])
 }
 
 model UserRole {

@@ -20,6 +20,10 @@ const navigation = [
     title: "用户管理",
     href: "/users",
   },
+  {
+    title: "角色管理",
+    href: "/roles",
+  },
 ];
 
 type DashboardUser = {

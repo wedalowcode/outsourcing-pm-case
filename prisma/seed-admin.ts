@@ -3,15 +3,15 @@ import argon2 from "argon2";
 import { db } from "../lib/db";
 
 const permissions = [
-  { code: "customer:read", name: "查看客户" },
-  { code: "customer:create", name: "创建客户" },
-  { code: "customer:update", name: "修改客户" },
-  { code: "customer:delete", name: "删除客户" },
-  { code: "project:read", name: "查看项目" },
-  { code: "project:create", name: "创建项目" },
-  { code: "task:read", name: "查看任务" },
-  { code: "task:assign", name: "分配任务" },
-  { code: "worklog:create", name: "创建工时记录" },
+  { code: "customer:read", name: "查看客户", resource: "customer", action: "read" },
+  { code: "customer:create", name: "创建客户", resource: "customer", action: "create" },
+  { code: "customer:update", name: "修改客户", resource: "customer", action: "update" },
+  { code: "customer:delete", name: "删除客户", resource: "customer", action: "delete" },
+  { code: "project:read", name: "查看项目", resource: "project", action: "read" },
+  { code: "project:create", name: "创建项目", resource: "project", action: "create" },
+  { code: "task:read", name: "查看任务", resource: "task", action: "read" },
+  { code: "task:assign", name: "分配任务", resource: "task", action: "assign" },
+  { code: "worklog:create", name: "创建工时记录", resource: "worklog", action: "create" },
 ];
 
 async function main() {
