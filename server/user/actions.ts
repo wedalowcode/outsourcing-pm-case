@@ -2,8 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/server/auth/session";
-import { createUser, updateUser } from "@/server/user/service";
-import { createUserSchema, updateUserSchema } from "@/server/user/schema";
+import {
+  createUser,
+  updateUser,
+  deleteUser,
+  resetUserPassword,
+} from "@/server/user/service";
+import {
+  createUserSchema,
+  updateUserSchema,
+  deleteUserSchema,
+  resetUserPasswordSchema,
+} from "@/server/user/schema";
 
 export type CreateUserActionState = {
   success: boolean;
@@ -116,6 +126,101 @@ export async function updateUserAction(
     return {
       success: false,
       message: "更新用户资料失败，请稍后重试",
+    };
+  }
+}
+
+export async function deleteUserAction(
+  input: unknown,
+): Promise<CreateUserActionState> {
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return {
+      success: false,
+      message: "登录状态已失效，请重新登录",
+    };
+  }
+
+  // 必须在这里接入真实的用户删除权限检查。
+
+  const parsed = deleteUserSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: "请求参数不正确",
+    };
+  }
+
+  try {
+    await deleteUser(
+      parsed.data.id,
+      session.user.id,
+    );
+
+    revalidatePath("/users");
+
+    return {
+      success: true,
+      message: "用户删除成功",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "删除用户失败",
+    };
+  }
+}
+
+export async function resetUserPasswordAction(
+  input: unknown,
+): Promise<CreateUserActionState> {
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return {
+      success: false,
+      message: "登录状态已失效，请重新登录",
+    };
+  }
+
+  // 必须在这里接入真实的密码重置权限检查。
+
+  const parsed = resetUserPasswordSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message:
+        parsed.error.issues[0]?.message ??
+        "请求参数不正确",
+    };
+  }
+
+  try {
+    await resetUserPassword(
+      parsed.data.id,
+      parsed.data.password,
+      session.user.id,
+    );
+
+    revalidatePath("/users");
+
+    return {
+      success: true,
+      message: "密码重置成功，用户需要重新登录",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "重置密码失败",
     };
   }
 }

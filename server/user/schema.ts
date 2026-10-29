@@ -86,3 +86,20 @@ export const updateUserSchema = z.object({
 export type UpdateUserInput = z.infer<
   typeof updateUserSchema
 >;
+
+export const deleteUserSchema = z.object({
+  id: z.string().trim().min(1, "用户 ID 不能为空"),
+});
+
+export type DeleteUserInput = z.infer<
+  typeof deleteUserSchema
+>;
+
+export const resetUserPasswordSchema = z.object({
+  id: z.string().trim().min(1, "用户 ID 不能为空"),
+  password: passwordSchema,
+});
+
+export type ResetUserPasswordInput = z.infer<
+  typeof resetUserPasswordSchema
+>;

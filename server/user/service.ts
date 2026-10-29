@@ -187,3 +187,80 @@ export async function updateUser(
 
   return { success: true };
 }
+
+export async function deleteUser(
+  id: string,
+  currentUserId: string,
+) {
+  if (id === currentUserId) {
+    throw new Error("不能删除当前登录用户");
+  }
+
+  return db.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        username: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("用户不存在或已被删除");
+    }
+
+    // 在这里检查项目中所有不可删除的业务关联。
+    // 如果存在历史业务记录，拒绝物理删除。
+    //
+    // 例如：项目负责人、任务执行人、工时记录等。
+    // 具体查询必须根据当前 Prisma Schema 实现。
+
+    await tx.session.deleteMany({
+      where: { userId: id },
+    });
+
+    await tx.userRole.deleteMany({
+      where: { userId: id },
+    });
+
+    await tx.user.delete({
+      where: { id },
+    });
+
+    return { id: user.id };
+  });
+}
+
+export async function resetUserPassword(
+  id: string,
+  password: string,
+  currentUserId: string,
+) {
+  if (id === currentUserId) {
+    throw new Error("不能通过此操作重置自己的密码");
+  }
+
+  const passwordHash = await hashPassword(password);
+
+  return db.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!user) {
+      throw new Error("用户不存在");
+    }
+
+    await tx.user.update({
+      where: { id },
+      data: { passwordHash },
+    });
+
+    await tx.session.deleteMany({
+      where: { userId: id },
+    });
+
+    return { id: user.id };
+  });
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { SearchBar } from "@/components/common/search-bar";
 import { Pagination } from "@/components/common/pagination";
@@ -26,6 +26,8 @@ import {
 
 import { CreateUserDialog } from "./_components/create-user-dialog";
 import { EditUserDialog, type EditableUser } from "./_components/edit-user-dialog";
+import { DeleteUserDialog } from "./_components/delete-user-dialog";
+import { ResetUserPasswordDialog } from "./_components/reset-user-password-dialog";
 
 type UserStatus = "ACTIVE" | "DISABLED";
 
@@ -62,6 +64,23 @@ export function UserWorkspace({
   const [isPending, startTransition] = useTransition();
   const [editingUser, setEditingUser] =
     useState<EditableUser | null>(null);
+  const [deletingUser, setDeletingUser] =
+    useState<EditableUser | null>(null);
+  const [resettingPasswordUser, setResettingPasswordUser] =
+    useState<EditableUser | null>(null);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // 操作成功提示 4 秒后自动消失
+  useEffect(() => {
+    if (!successMessage) return;
+
+    const timer = setTimeout(
+      () => setSuccessMessage(""),
+      4000,
+    );
+
+    return () => clearTimeout(timer);
+  }, [successMessage]);
 
   function go(next: {
     keyword?: string;
@@ -165,6 +184,15 @@ export function UserWorkspace({
         </Button>
       </div>
 
+      {successMessage && (
+        <p
+          role="status"
+          className="text-sm text-green-600"
+        >
+          {successMessage}
+        </p>
+      )}
+
       <div
         className={
           isPending
@@ -239,13 +267,33 @@ export function UserWorkspace({
                   </TableCell>
 
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEditingUser(user)}
-                    >
-                      编辑
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingUser(user)}
+                      >
+                        编辑
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setResettingPasswordUser(user)
+                        }
+                      >
+                        重置密码
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeletingUser(user)}
+                      >
+                        删除
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -270,6 +318,31 @@ export function UserWorkspace({
               setEditingUser(null);
             }
           }}
+        />
+      )}
+
+      {deletingUser && (
+        <DeleteUserDialog
+          user={deletingUser}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDeletingUser(null);
+            }
+          }}
+        />
+      )}
+
+      {resettingPasswordUser && (
+        <ResetUserPasswordDialog
+          user={resettingPasswordUser}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setResettingPasswordUser(null);
+            }
+          }}
+          onSuccess={(message) => setSuccessMessage(message)}
         />
       )}
     </div>
