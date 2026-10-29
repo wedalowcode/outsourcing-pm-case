@@ -24,6 +24,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { CreateUserDialog } from "./_components/create-user-dialog";
+
 type UserStatus = "ACTIVE" | "DISABLED";
 
 type UserItem = {
@@ -114,11 +116,15 @@ export function UserWorkspace({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">用户管理</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          查询和查看系统用户信息。
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">用户管理</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            查询和查看系统用户信息。
+          </p>
+        </div>
+
+        <CreateUserDialog />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
