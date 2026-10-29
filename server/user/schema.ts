@@ -66,3 +66,23 @@ export const createUserSchema = z
   );
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+export const updateUserSchema = z.object({
+  id: z.string().min(1, "用户 ID 不能为空"),
+
+  name: z
+    .string()
+    .trim()
+    .min(1, "请输入姓名")
+    .max(100, "姓名不能超过 100 个字符"),
+
+  email: optionalEmailSchema,
+
+  phone: optionalPhoneSchema,
+
+  status: z.enum(["ACTIVE", "DISABLED"]),
+});
+
+export type UpdateUserInput = z.infer<
+  typeof updateUserSchema
+>;

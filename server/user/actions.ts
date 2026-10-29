@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentSession } from "@/server/auth/session";
-import { createUser } from "@/server/user/service";
-import { createUserSchema } from "@/server/user/schema";
+import { createUser, updateUser } from "@/server/user/service";
+import { createUserSchema, updateUserSchema } from "@/server/user/schema";
 
 export type CreateUserActionState = {
   success: boolean;
@@ -65,6 +65,57 @@ export async function createUserAction(
     return {
       success: false,
       message: "创建用户失败，请稍后重试",
+    };
+  }
+}
+
+export async function updateUserAction(
+  input: unknown,
+): Promise<CreateUserActionState> {
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return {
+      success: false,
+      message: "登录状态已失效，请重新登录",
+    };
+  }
+
+  // 必须在这里接入真实的用户编辑权限检查。
+  // 例如：requirePermission("user:update")
+
+  const parsed = updateUserSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: "请检查输入内容",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  try {
+    const result = await updateUser(parsed.data);
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.message,
+      };
+    }
+
+    revalidatePath("/users");
+
+    return {
+      success: true,
+      message: "用户资料更新成功",
+    };
+  } catch (error) {
+    console.error("updateUserAction failed", error);
+
+    return {
+      success: false,
+      message: "更新用户资料失败，请稍后重试",
     };
   }
 }

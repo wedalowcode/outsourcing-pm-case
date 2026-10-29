@@ -3,7 +3,7 @@ import "server-only";
 import { Prisma } from "@/app/generated/prisma/client";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/server/auth/password";
-import type { CreateUserInput } from "./schema";
+import type { CreateUserInput, UpdateUserInput } from "./schema";
 
 export type UserListOptions = {
   keyword?: string;
@@ -149,4 +149,41 @@ export async function createUser(
 
     throw error;
   }
+}
+
+export type UpdateUserResult =
+  | { success: true }
+  | {
+      success: false;
+      code: "NOT_FOUND";
+      message: string;
+    };
+
+export async function updateUser(
+  input: UpdateUserInput,
+): Promise<UpdateUserResult> {
+  const existingUser = await db.user.findUnique({
+    where: { id: input.id },
+    select: { id: true },
+  });
+
+  if (!existingUser) {
+    return {
+      success: false,
+      code: "NOT_FOUND",
+      message: "用户不存在或已被删除",
+    };
+  }
+
+  await db.user.update({
+    where: { id: input.id },
+    data: {
+      name: input.name.trim(),
+      email: input.email,
+      phone: input.phone,
+      status: input.status,
+    },
+  });
+
+  return { success: true };
 }

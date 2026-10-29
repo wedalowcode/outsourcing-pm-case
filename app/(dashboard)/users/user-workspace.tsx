@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { SearchBar } from "@/components/common/search-bar";
 import { Pagination } from "@/components/common/pagination";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 
 import { CreateUserDialog } from "./_components/create-user-dialog";
+import { EditUserDialog, type EditableUser } from "./_components/edit-user-dialog";
 
 type UserStatus = "ACTIVE" | "DISABLED";
 
@@ -59,6 +60,8 @@ export function UserWorkspace({
 }: UserWorkspaceProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [editingUser, setEditingUser] =
+    useState<EditableUser | null>(null);
 
   function go(next: {
     keyword?: string;
@@ -178,6 +181,7 @@ export function UserWorkspace({
               <TableHead>手机号</TableHead>
               <TableHead>状态</TableHead>
               <TableHead>创建时间</TableHead>
+              <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -185,7 +189,7 @@ export function UserWorkspace({
             {pageData.items.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="h-24 text-center text-muted-foreground"
                 >
                   没有符合条件的用户
@@ -233,6 +237,16 @@ export function UserWorkspace({
                       minute: "2-digit",
                     })}
                   </TableCell>
+
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingUser(user)}
+                    >
+                      编辑
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -246,6 +260,18 @@ export function UserWorkspace({
         pageSize={pageData.pageSize}
         onChange={(page) => go({ page })}
       />
+
+      {editingUser && (
+        <EditUserDialog
+          user={editingUser}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingUser(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
