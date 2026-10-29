@@ -1,7 +1,7 @@
 import "server-only";
 import { Prisma } from "@/app/generated/prisma/client";
 import { db } from "@/lib/db";
-import type { CreateRoleInput } from "./schema";
+import type { CreateRoleInput, UpdateRoleInput } from "./schema";
 
 export type RoleListParams = {
   keyword?: string;
@@ -173,4 +173,46 @@ export async function createRole(
 
     throw error;
   }
+}
+
+export type UpdateRoleResult =
+  | {
+      success: true;
+    }
+  | {
+      success: false;
+      code: "NOT_FOUND";
+      message: string;
+    };
+
+export async function updateRole(
+  input: UpdateRoleInput,
+): Promise<UpdateRoleResult> {
+  // 1. 检查目标角色是否存在。
+  const existingRole = await db.role.findUnique({
+    where: { id: input.id },
+    select: { id: true },
+  });
+
+  if (!existingRole) {
+    return {
+      success: false,
+      code: "NOT_FOUND",
+      message: "角色不存在或已被删除",
+    };
+  }
+
+  // 2. 只更新允许修改的字段，角色编码保持不变。
+  await db.role.update({
+    where: { id: input.id },
+    data: {
+      name: input.name.trim(),
+      description: input.description,
+      status: input.status,
+    },
+  });
+
+  return {
+    success: true,
+  };
 }

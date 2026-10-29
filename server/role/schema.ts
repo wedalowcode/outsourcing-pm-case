@@ -30,3 +30,25 @@ export const createRoleSchema = z.object({
 });
 
 export type CreateRoleInput = z.infer<typeof createRoleSchema>;
+
+export const updateRoleSchema = z.object({
+  id: z.string().min(1, "角色 ID 不能为空"),
+
+  name: z
+    .string()
+    .trim()
+    .min(2, "角色名称至少需要 2 个字符")
+    .max(50, "角色名称不能超过 50 个字符"),
+
+  description: z
+    .string()
+    .trim()
+    .max(500, "角色描述不能超过 500 个字符")
+    .transform((value) => value || null),
+
+  status: z.enum(["ACTIVE", "DISABLED"]),
+});
+
+export type UpdateRoleInput = z.infer<
+  typeof updateRoleSchema
+>;

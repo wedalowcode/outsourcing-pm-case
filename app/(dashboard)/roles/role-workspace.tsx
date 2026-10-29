@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { SearchBar } from "@/components/common/search-bar";
 import { Pagination } from "@/components/common/pagination";
@@ -25,6 +25,10 @@ import {
 } from "@/components/ui/table";
 
 import { CreateRoleDialog } from "./_components/create-role-dialog";
+import {
+  EditRoleDialog,
+  type EditableRole,
+} from "./_components/edit-role-dialog";
 
 type RoleStatus = "ACTIVE" | "DISABLED";
 
@@ -62,6 +66,8 @@ export function RoleWorkspace({
 }: RoleWorkspaceProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [editingRole, setEditingRole] =
+    useState<EditableRole | null>(null);
 
   function go(next: {
     keyword?: string;
@@ -203,6 +209,7 @@ export function RoleWorkspace({
               <TableHead>权限数量</TableHead>
               <TableHead>状态</TableHead>
               <TableHead>创建时间</TableHead>
+              <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -210,7 +217,7 @@ export function RoleWorkspace({
             {pageData.items.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="h-24 text-center text-muted-foreground"
                 >
                   没有符合条件的角色
@@ -262,6 +269,16 @@ export function RoleWorkspace({
                       minute: "2-digit",
                     })}
                   </TableCell>
+
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingRole(role)}
+                    >
+                      编辑
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -275,6 +292,19 @@ export function RoleWorkspace({
         pageSize={pageData.pageSize}
         onChange={(page) => go({ page })}
       />
+
+      {editingRole && (
+        <EditRoleDialog
+          key={editingRole.id}
+          role={editingRole}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingRole(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
