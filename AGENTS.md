@@ -19,6 +19,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `pnpm lint`：代码检查
 - `pnpm prisma generate`：修改 schema 后重新生成客户端
 - `pnpm prisma migrate dev`：创建并应用迁移
+- 首次运行：`cp .env.example .env`，修改后执行 `pnpm prisma migrate dev`
 
 ## 目录约定
 
