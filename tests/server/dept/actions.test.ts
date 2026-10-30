@@ -7,6 +7,7 @@ import {
 } from "vitest";
 
 import { BizError } from "@/lib/biz-error";
+import { Prisma } from "@/lib/generated/prisma/client";
 
 // actions 链路里包含 `import "server-only"`（经由 session.ts 引入），
 // 在 Node 测试环境直接加载会抛错。这里把它换成空模块。
@@ -160,6 +161,30 @@ describe("部门管理 Server Actions", () => {
         consoleSpy.mockRestore();
       }
     });
+
+    it("编码撞上唯一约束：返回友好提示", async () => {
+      mocks.createDept.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError(
+          "Unique constraint failed on the fields: (`code`)",
+          {
+            code: "P2002",
+            clientVersion: "7.10.0",
+          }
+        )
+      );
+
+      const result = await createDeptAction({
+        name: "研发部",
+        parentId: null,
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        message: "编码冲突，请重试或联系管理员",
+      });
+
+      expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    });
   });
 
   describe("updateDeptAction", () => {
@@ -302,6 +327,27 @@ describe("部门管理 Server Actions", () => {
       } finally {
         consoleSpy.mockRestore();
       }
+    });
+
+    it("删除时触发外键约束：返回友好提示", async () => {
+      mocks.deleteDept.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError(
+          "Foreign key constraint violated",
+          {
+            code: "P2003",
+            clientVersion: "7.10.0",
+          }
+        )
+      );
+
+      const result = await deleteDeptAction("dept-001");
+
+      expect(result).toEqual({
+        ok: false,
+        message: "该部门仍被其他数据引用，不能删除",
+      });
+
+      expect(mocks.revalidatePath).not.toHaveBeenCalled();
     });
   });
 });

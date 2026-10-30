@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { BizError } from "@/lib/biz-error";
 import { getCurrentSession } from "@/server/auth/session";
 import * as deptService from "./service";
@@ -28,6 +29,28 @@ async function run(
       return {
         ok: false as const,
         message: error.message,
+      };
+    }
+
+    // 并发写入导致编码撞上唯一约束：提示重试，而不是暴露数据库错误
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return {
+        ok: false as const,
+        message: "编码冲突，请重试或联系管理员",
+      };
+    }
+
+    // 外键约束：删除时仍被其他数据引用（例如并发插入了子部门）
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      return {
+        ok: false as const,
+        message: "该部门仍被其他数据引用，不能删除",
       };
     }
 

@@ -1,22 +1,27 @@
-import type { listDepts } from "./service";
-import type { TreeNode } from "./types";
+import type { DeptRecord, TreeNode } from "./types";
 
-// 算法核心：将扁平数组转换为 Tree 结构
-export function buildTree(
-  rows: Awaited<ReturnType<typeof listDepts>>,
-  parentId: string | null = null
-): TreeNode[] {
-  return rows
-    .filter((row) => row.parentId === parentId) // 步骤 A：找出当前层级的节点
-    .map((row) => ({
-      id: row.id,
-      name: row.name,
-      code: row.code,
-      parentId: row.parentId,
-      status: row.status,
-      // 步骤 B：递归寻找当前节点的所有子节点
-      children: buildTree(rows, row.id),
+/**
+ * 扁平数组 → 树。
+ *
+ * 先用 Map 按 parentId 分组，再自顶向下递归，整体复杂度 O(n)。
+ * 同级顺序沿用 listDepts 的 orderBy（sort asc, code asc），这里不再排序。
+ */
+export function buildTree(rows: DeptRecord[]): TreeNode[] {
+  const childrenOf = new Map<string | null, DeptRecord[]>();
+
+  for (const row of rows) {
+    const list = childrenOf.get(row.parentId) ?? [];
+    list.push(row);
+    childrenOf.set(row.parentId, list);
+  }
+
+  const build = (parentId: string | null): TreeNode[] =>
+    (childrenOf.get(parentId) ?? []).map((row) => ({
+      ...row,
+      children: build(row.id),
     }));
+
+  return build(null);
 }
 
 /**

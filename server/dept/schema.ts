@@ -40,3 +40,15 @@ export const DeptInputSchema = z.object({
 
 /** 从 Schema 自动推导 TypeScript 类型 */
 export type DeptInput = z.infer<typeof DeptInputSchema>;
+
+/**
+ * 列表页查询参数。
+ *
+ * searchParams 的值可能被重复拼接成数组（?keyword=a&keyword=b），
+ * 这里统一降级成安全默认值，避免后续调用字符串方法时抛错。
+ */
+export const DeptQuerySchema = z.object({
+  keyword: z.string().trim().catch(""),
+  parent: z.string().min(1).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).catch(1),
+});

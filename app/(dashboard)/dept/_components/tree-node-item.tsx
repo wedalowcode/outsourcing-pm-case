@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { TreeNode } from "@/server/dept/types";
+import { cn } from "cn";
+import { DEPT_STATUS, type TreeNode } from "@/server/dept/types";
 
 type TreeNodeItemProps = {
   node: TreeNode;
@@ -20,16 +21,19 @@ export function TreeNodeItem({
   const [expanded, setExpanded] = useState<boolean>(true);
   const hasChildren = node.children.length > 0;
   const isSelected = selectedId === node.id;
+  const isDisabled = node.status === DEPT_STATUS.DISABLED;
 
   return (
     <div>
       {/* 节点单行容器 */}
       <div
-        className={`flex items-center gap-1 rounded px-2 py-1 text-sm transition-colors ${
+        className={cn(
+          "flex items-center gap-1 rounded px-2 py-1 text-sm transition-colors",
           isSelected
-            ? "bg-blue-600 text-white"
-            : "text-gray-700 hover:bg-gray-100"
-        }`}
+            ? "bg-primary text-primary-foreground"
+            : "hover:bg-accent hover:text-accent-foreground",
+          !isSelected && isDisabled && "text-muted-foreground"
+        )}
         style={{
           // 根据层级 depth 动态计算缩进距离
           paddingLeft: 8 + depth * 16,
@@ -39,6 +43,7 @@ export function TreeNodeItem({
         {hasChildren ? (
           <button
             type="button"
+            aria-expanded={expanded}
             className="w-4 text-center text-xs opacity-70 hover:opacity-100"
             onClick={() => setExpanded((v) => !v)}
           >

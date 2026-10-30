@@ -13,6 +13,12 @@ export type TreeNode = {
   children: TreeNode[];
 };
 
+/** 建树所需的最小记录形状，避免 tree 反向依赖 service 的返回类型 */
+export type DeptRecord = Pick<
+  TreeNode,
+  "id" | "name" | "code" | "parentId" | "status"
+>;
+
 /** 表格行：给表格用，扁平，多了 parentName 和 sort */
 export type Row = {
   id: string;

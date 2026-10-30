@@ -77,18 +77,6 @@ beforeEach(() => {
 });
 
 describe("createDept", () => {
-  it("名称为空时应拒绝新增", async () => {
-    await expect(
-      createDept({
-        name: "   ",
-        parentId: null,
-      })
-    ).rejects.toThrow("请填写部门名称");
-
-    // 校验阶段就该终止，不应该启动事务
-    expect(mocks.db.$transaction).not.toHaveBeenCalled();
-  });
-
   it("未指定排序和状态时使用默认值", async () => {
     tx.dept.create.mockResolvedValue({
       id: "dept-1",
@@ -101,7 +89,7 @@ describe("createDept", () => {
     });
 
     const result = await createDept({
-      name: " 技术部 ",
+      name: "技术部",
       parentId: null,
     });
 
@@ -160,6 +148,30 @@ describe("createDept", () => {
         parentId: null,
       })
     ).rejects.toThrow("database failure");
+  });
+
+  it("描述传空字符串时应存为 null", async () => {
+    tx.dept.create.mockResolvedValue({
+      id: "dept-3",
+      name: "技术部",
+      code: "D001",
+      parentId: null,
+      sort: 10,
+      status: 1,
+      description: null,
+    });
+
+    await createDept({
+      name: "技术部",
+      parentId: null,
+      description: "",
+    });
+
+    expect(tx.dept.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        description: null,
+      }),
+    });
   });
 });
 
@@ -319,6 +331,45 @@ describe("updateDept", () => {
       data: {
         code: "D002-01-01",
       },
+    });
+  });
+
+  it("未传描述时保留原值，传空字符串时清空", async () => {
+    tx.dept.findUnique.mockResolvedValue({
+      id: "dept-1",
+      name: "技术部",
+      code: "D001",
+      parentId: null,
+      sort: 10,
+      status: 1,
+      description: "原始描述",
+    });
+
+    tx.dept.update.mockResolvedValue({});
+
+    await updateDept("dept-1", {
+      name: "技术部",
+      parentId: null,
+    });
+
+    expect(tx.dept.update).toHaveBeenLastCalledWith({
+      where: { id: "dept-1" },
+      data: expect.objectContaining({
+        description: "原始描述",
+      }),
+    });
+
+    await updateDept("dept-1", {
+      name: "技术部",
+      parentId: null,
+      description: "",
+    });
+
+    expect(tx.dept.update).toHaveBeenLastCalledWith({
+      where: { id: "dept-1" },
+      data: expect.objectContaining({
+        description: null,
+      }),
     });
   });
 });

@@ -11,15 +11,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { DeptStatus, TreeNode } from "@/server/dept/types";
+import { FormField } from "@/components/common/form-field";
+import { OptionSelect } from "@/components/common/option-select";
+import type {
+  DeptInput,
+  DeptStatus,
+  Row,
+  TreeNode,
+} from "@/server/dept/types";
 
 /** 上级部门下拉里代表“无（顶级部门）”的哨兵值 */
 const ROOT_OPTION = "__ROOT__";
@@ -46,16 +46,28 @@ export function emptyForm(parentId: string | null): DeptForm {
   };
 }
 
-type DeptEditDialogProps = {
-  mode: "create" | "edit";
-  initial: DeptForm;
-  tree: TreeNode[];
-  excludeIds: string[];
-  error: string;
-  submitting: boolean;
-  onClose: () => void;
-  onSubmit: (form: DeptForm) => void;
-};
+/** 表格行 → 表单值（编辑弹窗回显） */
+export function toForm(row: Row): DeptForm {
+  return {
+    name: row.name,
+    code: row.code,
+    parentId: row.parentId,
+    sort: String(row.sort),
+    status: row.status === 1 ? 1 : 0,
+    description: row.description ?? "",
+  };
+}
+
+/** 表单值 → Action 入参 */
+export function toDeptInput(form: DeptForm): DeptInput {
+  return {
+    name: form.name.trim(),
+    parentId: form.parentId,
+    sort: form.sort.trim() ? Number(form.sort) : undefined,
+    status: form.status,
+    description: form.description.trim(),
+  };
+}
 
 type FlatOption = {
   id: string;
@@ -91,13 +103,20 @@ export function DeptEditDialog({
   initial,
   tree,
   excludeIds,
-  error,
-  submitting,
   onClose,
   onSubmit,
-}: DeptEditDialogProps) {
+}: {
+  mode: "create" | "edit";
+  initial: DeptForm;
+  tree: TreeNode[];
+  excludeIds: string[];
+  onClose: () => void;
+  /** 返回错误文案表示失败，返回 undefined 表示成功（由父组件卸载弹窗） */
+  onSubmit: (form: DeptForm) => Promise<string | undefined>;
+}) {
   const [form, setForm] = useState<DeptForm>(initial);
-  const [localError, setLocalError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const parentOptions = flattenTree(tree, excludeIds);
 
@@ -121,33 +140,40 @@ export function DeptEditDialog({
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  // 客户端只做最基本的校验：必填、排序是整数。
-  // 部门名称重复、上级是否合法等业务规则由服务端判断。
-  function handleSave() {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting) return;
+
+    // 客户端只做最基本的校验：必填、排序是整数。
+    // 名称重复、上级是否合法等业务规则由服务端判断。
     if (!form.name.trim()) {
-      setLocalError("请填写部门名称");
+      setError("请填写部门名称");
       return;
     }
 
-    if (
-      form.sort.trim() &&
-      !Number.isInteger(Number(form.sort))
-    ) {
-      setLocalError("排序必须是整数");
+    if (form.sort.trim() && !Number.isInteger(Number(form.sort))) {
+      setError("排序必须是整数");
       return;
     }
 
-    setLocalError("");
-    onSubmit(form);
+    setSubmitting(true);
+    setError("");
+
+    const message = await onSubmit(form).catch(
+      () => "保存失败，请稍后重试"
+    );
+
+    setSubmitting(false);
+
+    if (message) setError(message);
   }
-
-  const message = localError || error;
 
   return (
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) onClose();
+        // 提交中不允许通过 Esc 或点击遮罩关闭，避免中途打断请求
+        if (!open && !submitting) onClose();
       }}
     >
       <DialogContent className="sm:max-w-md">
@@ -160,126 +186,94 @@ export function DeptEditDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">
-              部门名称
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <FormField label="部门名称" htmlFor="dept-name">
             <Input
+              id="dept-name"
               value={form.name}
               placeholder="例如：研发部"
-              onChange={(e) => setField("name", e.target.value)}
+              disabled={submitting}
+              onChange={(event) => setField("name", event.target.value)}
             />
-          </div>
+          </FormField>
 
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">
-              部门编码
-            </label>
+          <FormField label="部门编码" htmlFor="dept-code">
             <Input
+              id="dept-code"
               value={form.code}
               placeholder="保存后自动生成"
               readOnly
               className="bg-muted/50 font-mono"
             />
-          </div>
+          </FormField>
 
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">
-              上级部门
-            </label>
-            <Select
+          <FormField label="上级部门">
+            <OptionSelect
               items={parentItems}
               value={form.parentId ?? ROOT_OPTION}
-              onValueChange={(value) =>
+              onChange={(value) =>
                 setField(
                   "parentId",
-                  value === ROOT_OPTION ? null : String(value)
+                  value === ROOT_OPTION ? null : value
                 )
               }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {parentItems.map((item) => (
-                  <SelectItem key={item.value} value={item.value}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            />
+          </FormField>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">
-                排序
-              </label>
+            <FormField label="排序" htmlFor="dept-sort">
               <Input
+                id="dept-sort"
                 value={form.sort}
                 placeholder="留空则自动排到末尾"
                 inputMode="numeric"
-                onChange={(e) => setField("sort", e.target.value)}
+                disabled={submitting}
+                onChange={(event) => setField("sort", event.target.value)}
               />
-            </div>
+            </FormField>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">
-                状态
-              </label>
-              <Select
+            <FormField label="状态">
+              <OptionSelect
                 items={statusItems}
                 value={String(form.status)}
-                onValueChange={(value) =>
+                onChange={(value) =>
                   setField("status", value === "1" ? 1 : 0)
                 }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusItems.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              />
+            </FormField>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">
-              部门描述
-            </label>
+          <FormField label="部门描述" htmlFor="dept-description">
             <Textarea
+              id="dept-description"
               value={form.description}
               placeholder="选填，最多 500 字"
               rows={3}
-              onChange={(e) =>
-                setField("description", e.target.value)
+              disabled={submitting}
+              onChange={(event) =>
+                setField("description", event.target.value)
               }
             />
-          </div>
-        </div>
+          </FormField>
 
-        {message ? (
-          <p className="text-sm text-destructive">{message}</p>
-        ) : null}
+          {error ? (
+            <p className="text-sm text-destructive">{error}</p>
+          ) : null}
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            disabled={submitting}
-            onClick={onClose}
-          >
-            取消
-          </Button>
-          <Button disabled={submitting} onClick={handleSave}>
-            {submitting ? "保存中…" : "保存"}
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitting}
+              onClick={onClose}
+            >
+              取消
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "保存中…" : "保存"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -11,7 +11,7 @@ import type { DeptInput } from "@/server/dept/types";
 /** 全量读取：给组织树和“上级部门名称”用 */
 export async function listDepts() {
   return db.dept.findMany({
-    orderBy: [{ sort: "asc" }, { name: "asc" }],
+    orderBy: [{ sort: "asc" }, { code: "asc" }],
   });
 }
 
@@ -45,61 +45,12 @@ export async function listDeptPage(options: {
 
   const rows = await db.dept.findMany({
     where,
-    orderBy: [{ sort: "asc" }, { name: "asc" }],
+    orderBy: [{ sort: "asc" }, { code: "asc" }],
     skip: (page - 1) * pageSize, // 跳过前面几页
     take: pageSize, // 只取一页
   });
 
   return { rows, total, page, pageSize };
-}
-
-/**
- * 校验输入并规范化字符串。
- */
-function validate(input: DeptInput) {
-  if (typeof input.name !== "string") {
-    throw new BizError("请填写部门名称");
-  }
-
-  const name = input.name.trim();
-
-  if (!name) {
-    throw new BizError("请填写部门名称");
-  }
-
-  if (name.length > 50) {
-    throw new BizError("部门名称不能超过 50 个字");
-  }
-
-  if (
-    input.sort !== undefined &&
-    !Number.isInteger(input.sort)
-  ) {
-    throw new BizError("排序必须是整数");
-  }
-
-  if (
-    input.status !== undefined &&
-    input.status !== 0 &&
-    input.status !== 1
-  ) {
-    throw new BizError("状态只能是启用或停用");
-  }
-
-  if (
-    input.description !== undefined &&
-    typeof input.description !== "string"
-  ) {
-    throw new BizError("部门描述格式不正确");
-  }
-
-  return {
-    name,
-    description:
-      input.description === undefined
-        ? undefined
-        : input.description.trim() || null,
-  };
 }
 
 /**
@@ -193,7 +144,6 @@ async function recodeDescendants(
  * 编码分配、排序计算和部门写入在同一个事务中完成。
  */
 export async function createDept(input: DeptInput) {
-  const { name, description } = validate(input);
   const parentId = input.parentId ?? null;
 
   return db.$transaction(async (tx) => {
@@ -207,12 +157,12 @@ export async function createDept(input: DeptInput) {
     // 3. 写入部门
     return tx.dept.create({
       data: {
-        name,
+        name: input.name,
         code,
         parentId,
         sort,
         status: input.status ?? 1,
-        description: description ?? null,
+        description: input.description || null,
       },
     });
   });
@@ -226,7 +176,6 @@ export async function updateDept(
   id: string,
   input: DeptInput
 ) {
-  const { name, description } = validate(input);
   const parentId = input.parentId ?? null;
 
   return db.$transaction(async (tx) => {
@@ -265,15 +214,15 @@ export async function updateDept(
     const updated = await tx.dept.update({
       where: { id },
       data: {
-        name,
+        name: input.name,
         code,
         parentId,
         sort,
         status: input.status ?? row.status,
         description:
-          description === undefined
+          input.description === undefined
             ? row.description
-            : description,
+            : input.description || null,
       },
     });
 

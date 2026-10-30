@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { AppLayout } from "@/components/layout/app-layout";
 import { getCurrentSession } from "@/server/auth/session";
 
 export default async function DashboardLayout({
@@ -16,8 +16,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <DashboardShell user={session.user}>
+    <AppLayout userName={session.user.name}>
       {children}
-    </DashboardShell>
+    </AppLayout>
   );
 }
