@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Prisma } from "@/app/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/server/auth/password";
 import type { CreateUserInput, UpdateUserInput } from "./schema";

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { Prisma } from "@/app/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { getCurrentSession } from "@/server/auth/session";
 import { createRole, updateRole } from "@/server/role/service";
 import {

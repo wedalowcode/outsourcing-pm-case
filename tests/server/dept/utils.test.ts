@@ -4,7 +4,7 @@ import {
   nextDeptCode,
   nextSort,
   type Tx,
-} from "../server/dept/dept-tools";
+} from "@/server/dept/utils";
 
 /**
  * 创建假的事务客户端。

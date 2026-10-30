@@ -1,5 +1,5 @@
 import "server-only";
-import { Prisma } from "@/app/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
 import type { CreateRoleInput, UpdateRoleInput } from "./schema";
 

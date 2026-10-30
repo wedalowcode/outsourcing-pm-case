@@ -41,7 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/app/generated/prisma
+# Prisma 生成物
+/lib/generated
 
 # IDE / agent tooling
 .agents/

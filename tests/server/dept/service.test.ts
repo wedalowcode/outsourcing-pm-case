@@ -30,7 +30,7 @@ vi.mock("@/lib/db", () => ({
   db: mocks.db,
 }));
 
-vi.mock("@/server/dept/dept-tools", () => ({
+vi.mock("@/server/dept/utils", () => ({
   nextDeptCode: mocks.nextDeptCode,
   nextSort: mocks.nextSort,
   ROOT_SCOPE: "__ROOT__",

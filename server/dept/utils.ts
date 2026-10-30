@@ -1,4 +1,4 @@
-import type { Prisma } from "@/app/generated/prisma/client";
+import type { Prisma } from "@/lib/generated/prisma/client";
 import { BizError } from "@/lib/biz-error";
 
 /** 事务客户端类型：$transaction 回调里拿到的 tx */
